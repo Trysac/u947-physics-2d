@@ -1,47 +1,36 @@
 # physics-2d
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/Trysac/u947-physics-2d/actions/workflows/ci.yml/badge.svg)](https://github.com/Trysac/u947-physics-2d/actions/workflows/ci.yml)
-
-Simulate 2D rigid bodies deterministically with SAT collision for convex polygons and circles, sequential impulses with restitution and friction, distance joints and sleeping
-
-## Problem
-
-Describe in two or three sentences the concrete problem this utility solves, who hits it, and what
-they do today without it. Replace this paragraph when the first real feature lands.
-
-## Install
-
-A C++20 library built with CMake. Until it is published to a vcpkg registry, add this repository
-at a release tag as a subdirectory (or through `FetchContent`) and link its target:
-
-```cmake
-add_subdirectory(u947-physics-2d)
-target_link_libraries(app PRIVATE trysac::physics_2d)
-```
-
-Requires a C++20 compiler and CMake 3.29 or newer. No dependencies outside the C++ standard
-library.
+Deterministic 2D rigid-body physics library in C++20 (`trysac::physics_2d`) featuring Separating Axis Theorem (SAT) collision detection for circles and convex polygons, sort-and-sweep broadphase, sequential impulse contact and distance-joint solver, non-linear position projection, and body sleeping.
 
 ## Usage
 
 ```cpp
-#include <trysac/physics_2d/text.hpp>
+#include "trysac/physics_2d/physics.hpp"
 
-// normalize trims surrounding whitespace and lower-cases the text.
-auto name = trysac::physics_2d::normalize("  Hello World ");  // "hello world"
-
-// Blank input is rejected explicitly instead of returning an empty string.
-trysac::physics_2d::normalize("   ");  // throws BlankInputError ("input is blank")
+int main() {
+  trysac::physics_2d::World world;
+  trysac::physics_2d::BodyDef def{.type = trysac::physics_2d::BodyType::dynamic_body,
+                                  .position = {0.0, 10.0},
+                                  .shape = trysac::physics_2d::make_box(0.5, 0.5)};
+  const auto body = world.create_body(def);
+  world.step(1.0 / 60.0);
+  return world.state(body).position.y < 10.0 ? 0 : 1;
+}
 ```
 
-## Documentation
+## API Summary
 
-- [Architecture](docs/ARCHITECTURE.md) and [decisions](docs/decisions/)
-- [Testing](docs/TESTING.md) and [security](docs/SECURITY.md)
-- [Project record](docs/PROJECT.md) and [stack](docs/STACK.md)
-- [Changelog](CHANGELOG.md) and [contributing guide](CONTRIBUTING.md)
+- **Shapes**: `Circle` {radius}, `Polygon` {std::vector<Vec2>}, `make_box(half_width, half_height)`. Validations: 3-8 vertices, strictly convex, non-degenerate.
+- **Collisions**: `collide(Shape A, Transform A, Shape B, Transform B)` returns `std::optional<Manifold>` (normal, penetration, points).
+- **World**: `create_body(BodyDef)`, `destroy_body(BodyId)`, `add_distance_joint(...)`, `apply_impulse(...)`, `step(double dt)`.
+- **Constraints/Dynamics**: Friction `sqrt(f_a * f_b)`, Restitution `max(e_a, e_b)`, distance joints, semi-implicit Euler integration.
+- **Limits**: `dt` in (0, 0.1], `max_bodies` (default 10,000), requires finite `double` inputs.
+- **Errors**: `PhysicsError` (code: 'invalid_mass', 'too_many_vertices', 'not_convex', 'invalid_step', 'too_many_bodies', 'invalid_value', 'unknown_body', 'invalid_joint').
 
-## License
+## Why not Box2D?
 
-[MIT](LICENSE) (c) 2026 Miguel Gomez
+Box2D is a mature industry standard but is large and complex; `physics-2d` is a compact, single-namespace C++20 implementation designed for study and precise, bit-level deterministic results across replays.
+
+## Security
+
+See [docs/SECURITY.md](docs/SECURITY.md) for the threat model.

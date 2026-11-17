@@ -9,4 +9,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added deterministic 2D rigid-body physics engine (`trysac::physics_2d`) with SAT collision detection, sequential impulses, distance joints, sleeping, and 64-bit state hashing.
 - Initial project structure from the factory utility template.
