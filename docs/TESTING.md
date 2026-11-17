@@ -7,30 +7,12 @@ cmake -P scripts/check.cmake -- tests   # Catch2 tests under llvm-cov
 cmake -P scripts/check.cmake            # every gate, as CI and the factory run it
 ```
 
+## Coverage
+
+- `tests/physics_test.cpp`: Covers collision logic for circles and polygons (Voronoi regions), elastic collision conservation (energy/momentum), free-fall integration, resting/sleeping behavior, distance joint maintenance, and validation errors (invalid polygons, body counts, etc.).
+- `tests/text_test.cpp`: Tests basic string normalization logic (trimming, case folding) and error handling for blank inputs.
+- `tests/text_properties_test.cpp`: Property-based tests using Catch2 generators to verify idempotence and whitespace stripping.
+
 ## Policy
 
-- Line coverage of the library (`include/` and `src/`, measured by llvm-cov) must stay
-  at or above 80 %; the gate fails below it.
-- Tests exercise the public API. They assert every observable effect: returned values, thrown
-  exceptions (`CHECK_THROWS_MATCHES`) and their messages.
-- Property tests draw inputs with Catch2 generators (`GENERATE(take(200, random(...)))`) and
-  state invariants such as idempotence or round trips; the test run fixes the random seed.
-- Each bug fix starts with a failing test that reproduces it.
-- Tests are deterministic: no network, no wall clock, no dependence on test order.
-
-## Tiers
-
-- Local tier (every gate run, coverage measured here): unit and property tests, plus conformance
-  on small fixtures kept in the repository.
-- CI tier: conformance that needs an external tool or a download. Tag the test case with
-  `[conformance]` (`TEST_CASE("name", "[conformance]")`); the local run filters the tag out
-  (`~[conformance]`) unless `FABRICA_CI=1`, while the lint gate always compiles it. The CI
-  `conformance` job sets `FABRICA_CI=1` and runs the full suite. Tools are installed by the
-  optional `ci/conformance-setup.sh` (bash, CI only; verify every download against a pinned
-  SHA-256), and tests `SKIP()` cleanly when their tool is missing.
-
-## Layout
-
-Tests live in `tests/`, one `*_test.cpp` file per area, all linked into one Catch2 executable.
-Fixtures and golden files go in `tests/fixtures/` (never compiled); tests open them relative to
-the repository root, the working directory of the test run.
+Tests exercise the public API (`trysac::physics_2d`). They assert observable effects: return values, thrown `PhysicsError` exceptions, and exact code strings. Tests are deterministic and avoid wall-clock time or external network dependency.
